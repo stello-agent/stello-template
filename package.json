@@ -1,0 +1,25 @@
+{
+  "name": "stello-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "dry-run": "DEMO_DRY_RUN=1 tsx src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@stello-ai/core": "^0.2.0",
+    "@stello-ai/devtools": "^0.2.0",
+    "@stello-ai/session": "^0.2.0",
+    "dotenv": "^17.2.3",
+    "openai": "^6.32.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
