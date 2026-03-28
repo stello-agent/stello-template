@@ -73,4 +73,5 @@ DEVTOOLS_PORT=4800
 - `OPENAI_API_KEY` is not persisted to disk.
 - Session-level system prompt edits are also persisted per session.
 - Persistence lives under `./tmp/stello-app` by default.
-- Built-in `stello_create_session` accepts `label`, optional `systemPrompt`, and optional `prompt`. The `prompt` is written as the child session's first assistant kickoff message.
+- Built-in `stello_create_session` now follows the official `createSessionTool` semantics from `@stello-ai/session`.
+- It accepts `label`, optional `systemPrompt`, and optional `prompt`. The `prompt` is written as the child session's first assistant kickoff message.

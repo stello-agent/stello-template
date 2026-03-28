@@ -12,14 +12,14 @@ importers:
         specifier: ^0.80.0
         version: 0.80.0(zod@3.25.76)
       '@stello-ai/core':
-        specifier: ^0.2.0
-        version: 0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
+        specifier: ^0.2.1
+        version: 0.2.1(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
       '@stello-ai/devtools':
-        specifier: ^0.2.0
-        version: 0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
+        specifier: ^0.2.1
+        version: 0.2.1(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
       '@stello-ai/session':
-        specifier: ^0.2.0
-        version: 0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
+        specifier: ^0.2.2
+        version: 0.2.2(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
       dotenv:
         specifier: ^17.2.3
         version: 17.3.1
@@ -214,14 +214,14 @@ packages:
     peerDependencies:
       hono: ^4
 
-  '@stello-ai/core@0.2.0':
-    resolution: {integrity: sha512-VTqFPeQAnjcZM4Q8hE6B3o+azAqtmvvkmQzF/9wKPAYYHP5iP4A/4I95XW6bMeKbqv2asZ9yU4y4jwiVATAriQ==}
+  '@stello-ai/core@0.2.1':
+    resolution: {integrity: sha512-coCb6MJ7mbzgDqiJfXY/KMDAnbAOYdx/vOM2Sz5NdDcvTdHy/f2Jjepz4MMXRXGUHGjpys9C1tIyIfjgQo856A==}
 
-  '@stello-ai/devtools@0.2.0':
-    resolution: {integrity: sha512-D3QTdoE+WtFCQnRA8BLRxsTNKkjosBOqCxFWkKEnI8+1f1zInLHQV+TeFyy7WCySlyt6zv72veif8POjucpp6A==}
+  '@stello-ai/devtools@0.2.1':
+    resolution: {integrity: sha512-Q6KB8jrC6yD3O9t0dPfIRqdXyaXSSy0e3ecLrqjqlv2zRGAaAXajY6puus1ibT9ntd5DxZ6m5faHML+q04z1Vw==}
 
-  '@stello-ai/session@0.2.0':
-    resolution: {integrity: sha512-S5nCes6wshL4MCxNS9pzg6vN/R4/TpxxfEts6qED1DWttBQ54CLAp0B2sCsQrivb9lT9yPRNZBNowK49cNY9tQ==}
+  '@stello-ai/session@0.2.2':
+    resolution: {integrity: sha512-WsrLqx8yeDoIejsfAQlXF7c9aGoMRxkGjQsPbMVSJzwV9fPjL4wKdwp8H84E/oRHh77pJMWVVlQ8dcUbTuXDkA==}
     peerDependencies:
       '@anthropic-ai/sdk': '>=0.30.0'
       openai: '>=4.0.0'
@@ -398,18 +398,18 @@ snapshots:
     dependencies:
       hono: 4.12.9
 
-  '@stello-ai/core@0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
+  '@stello-ai/core@0.2.1(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
     dependencies:
-      '@stello-ai/session': 0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
+      '@stello-ai/session': 0.2.2(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
     transitivePeerDependencies:
       - '@anthropic-ai/sdk'
       - openai
       - typescript
 
-  '@stello-ai/devtools@0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
+  '@stello-ai/devtools@0.2.1(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.12.9)
-      '@stello-ai/core': 0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
+      '@stello-ai/core': 0.2.1(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)
       hono: 4.12.9
       ws: 8.20.0
     transitivePeerDependencies:
@@ -419,7 +419,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@stello-ai/session@0.2.0(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
+  '@stello-ai/session@0.2.2(@anthropic-ai/sdk@0.80.0(zod@3.25.76))(openai@6.33.0(ws@8.20.0)(zod@3.25.76))(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
       zod: 3.25.76

@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
-    "@stello-ai/core": "^0.2.0",
-    "@stello-ai/devtools": "^0.2.0",
-    "@stello-ai/session": "^0.2.0",
+    "@stello-ai/core": "^0.2.1",
+    "@stello-ai/devtools": "^0.2.1",
+    "@stello-ai/session": "^0.2.2",
     "dotenv": "^17.2.3",
     "openai": "^6.32.0"
   },

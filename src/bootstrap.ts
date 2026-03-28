@@ -20,9 +20,15 @@ import {
   type TopologyNode,
   type TurnRecord,
 } from '@stello-ai/core'
-import { startDevtools, type DevtoolsInstance } from '@stello-ai/devtools'
+import {
+  startDevtools,
+  type DevtoolsInstance,
+  type DevtoolsPersistedState,
+  type DevtoolsStateStore,
+} from '@stello-ai/devtools'
 import {
   InMemoryStorageAdapter,
+  createSessionTool,
   createOpenAICompatibleAdapter,
   loadMainSession,
   loadSession,
@@ -40,36 +46,6 @@ interface WrappedSession {
 interface WrappedMainSession {
   main: MainSession
   session?: never
-}
-
-interface LocalDevtoolsPersistedState {
-  hotConfig?: {
-    runtime?: { idleTtlMs?: number }
-    scheduling?: {
-      consolidation?: { trigger?: string; everyNTurns?: number }
-      integration?: { trigger?: string; everyNTurns?: number }
-    }
-    splitGuard?: { minTurns?: number; cooldownTurns?: number }
-  }
-  llm?: {
-    model: string
-    baseURL: string
-    apiKey?: string
-    temperature?: number
-    maxTokens?: number
-  }
-  prompts?: {
-    consolidate?: string
-    integrate?: string
-  }
-  disabledTools?: string[]
-  disabledSkills?: string[]
-}
-
-interface LocalDevtoolsStateStore {
-  load(): Promise<LocalDevtoolsPersistedState | null>
-  save(state: LocalDevtoolsPersistedState): Promise<void>
-  reset?(): Promise<void>
 }
 
 interface PersistedTurnRecord extends Omit<TurnRecord, 'role'> {
@@ -141,59 +117,19 @@ async function writePersistedSystemPrompt(
 }
 
 /** 创建模板使用的文件型 DevTools state store。 */
-function createFileDevtoolsStateStore(fs: NodeFileSystemAdapter): LocalDevtoolsStateStore {
+function createFileDevtoolsStateStore(fs: NodeFileSystemAdapter): DevtoolsStateStore {
   const path = 'memory/devtools-state.json'
   return {
-    async load(): Promise<LocalDevtoolsPersistedState | null> {
-      return fs.readJSON<LocalDevtoolsPersistedState>(path).catch(() => null)
+    async load(): Promise<DevtoolsPersistedState | null> {
+      return fs.readJSON<DevtoolsPersistedState>(path).catch(() => null)
     },
-    async save(state: LocalDevtoolsPersistedState): Promise<void> {
+    async save(state: DevtoolsPersistedState): Promise<void> {
       await fs.writeJSON(path, state)
     },
     async reset(): Promise<void> {
       await fs.writeJSON(path, {})
     },
   }
-}
-
-/** 把已持久化的调试状态恢复到模板运行时。 */
-function applyPersistedState(
-  state: LocalDevtoolsPersistedState | null,
-  setters: {
-    setPrompts: (next: NonNullable<LocalDevtoolsPersistedState['prompts']>) => void
-    setLlmConfig: (next: NonNullable<LocalDevtoolsPersistedState['llm']>) => void
-    setDisabledTools: (names: string[]) => void
-    setDisabledSkills: (names: string[]) => void
-  },
-): void {
-  if (!state) return
-  if (state.prompts) setters.setPrompts(state.prompts)
-  if (state.llm) setters.setLlmConfig(state.llm)
-  if (state.disabledTools) setters.setDisabledTools(state.disabledTools)
-  if (state.disabledSkills) setters.setDisabledSkills(state.disabledSkills)
-}
-
-/** 持久化当前模板里的 DevTools 全局状态。 */
-async function persistDevtoolsState(
-  stateStore: LocalDevtoolsStateStore,
-  values: {
-    llm: NonNullable<LocalDevtoolsPersistedState['llm']>
-    prompts: NonNullable<LocalDevtoolsPersistedState['prompts']>
-    disabledTools: string[]
-    disabledSkills: string[]
-  },
-): Promise<void> {
-  await stateStore.save({
-    llm: {
-      model: values.llm.model,
-      baseURL: values.llm.baseURL,
-      temperature: values.llm.temperature,
-      maxTokens: values.llm.maxTokens,
-    },
-    prompts: values.prompts,
-    disabledTools: values.disabledTools,
-    disabledSkills: values.disabledSkills,
-  })
 }
 
 /** 按 core session id 注册并加载标准 Session。 */
@@ -495,6 +431,7 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
     apiKey,
     baseURL: spec.llm.baseURL,
     model: spec.llm.model,
+    maxContextTokens: spec.llm.maxContextTokens,
   })
   let currentLlmConfig = {
     model: spec.llm.model,
@@ -503,35 +440,6 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
     temperature: spec.llm.temperature ?? 0.7,
     maxTokens: spec.llm.maxTokens ?? 2048,
   }
-
-  applyPersistedState(await stateStore.load(), {
-    setPrompts(next) {
-      if (next.consolidate) currentConsolidatePrompt = next.consolidate
-      if (next.integrate) currentIntegratePrompt = next.integrate
-    },
-    setLlmConfig(next) {
-      currentLlmConfig = {
-        model: next.model,
-        baseURL: next.baseURL,
-        apiKey,
-        temperature: next.temperature ?? currentLlmConfig.temperature,
-        maxTokens: next.maxTokens ?? currentLlmConfig.maxTokens,
-      }
-      currentLlm = createOpenAICompatibleAdapter({
-        apiKey,
-        baseURL: currentLlmConfig.baseURL,
-        model: currentLlmConfig.model,
-      })
-    },
-    setDisabledTools(names) {
-      disabledTools.clear()
-      for (const name of names) disabledTools.add(name)
-    },
-    setDisabledSkills(names) {
-      disabledSkills.clear()
-      for (const name of names) disabledSkills.add(name)
-    },
-  })
 
   for (const skill of spec.skills ?? []) {
     skillRouter.register(skill)
@@ -720,24 +628,37 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
         const source = await requireNode(sessions, currentToolSessionId)
         const effectiveParentId = source.parentId === null ? source.id : (await sessions.getRoot()).id
         const parentEntry = sessionMap.get(currentToolSessionId)
-        const inheritedSystemPrompt = parentEntry
-          ? await ('main' in parentEntry && parentEntry.main
-            ? parentEntry.main.systemPrompt()
-            : parentEntry.session.systemPrompt())
-          : null
-        const child = await createChildSession({
-          parentId: effectiveParentId,
+        if (!parentEntry) {
+          return { success: false, error: `Unknown session: ${currentToolSessionId}` }
+        }
+        const parentSession = 'main' in parentEntry && parentEntry.main ? parentEntry.main : parentEntry.session
+        const createTool = createSessionTool(() => ({
+          fork: async (forkOptions) => {
+            const child = await createChildSession({
+              parentId: effectiveParentId,
+              label: forkOptions.label,
+              systemPrompt: forkOptions.systemPrompt ?? await parentSession.systemPrompt() ?? undefined,
+              prompt: forkOptions.prompt,
+            })
+            const childEntry = sessionMap.get(child.id)
+            if (!childEntry || !('session' in childEntry) || !childEntry.session) {
+              throw new Error(`Failed to load child session: ${child.id}`)
+            }
+            return childEntry.session
+          },
+        } as Session))
+        const result = await createTool.execute({
           label: String(args.label ?? 'New Session'),
-          systemPrompt: args.systemPrompt
-            ? String(args.systemPrompt)
-            : inheritedSystemPrompt ?? undefined,
-          prompt: args.prompt ? String(args.prompt) : undefined,
+          ...(args.systemPrompt ? { systemPrompt: String(args.systemPrompt) } : {}),
+          ...(args.prompt ? { prompt: String(args.prompt) } : {}),
         })
+        const output = result.output as { sessionId: string; label: string }
+        const child = await requireNode(sessions, output.sessionId)
         return {
           success: true,
           data: {
-            sessionId: child.id,
-            label: child.label,
+            sessionId: output.sessionId,
+            label: output.label,
             parentId: child.parentId,
           },
         }
@@ -849,6 +770,7 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
               apiKey: nextConfig.apiKey ?? currentLlmConfig.apiKey,
               baseURL: nextConfig.baseURL,
               model: nextConfig.model,
+              maxContextTokens: spec.llm.maxContextTokens,
             })
             currentLlmConfig = {
               model: nextConfig.model,
@@ -862,12 +784,6 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
               const session = 'main' in entry && entry.main ? entry.main : entry.session
               session.setLLM(newLlm)
             }
-            persistDevtoolsState(stateStore, {
-              llm: currentLlmConfig,
-              prompts: { consolidate: currentConsolidatePrompt, integrate: currentIntegratePrompt },
-              disabledTools: [...disabledTools],
-              disabledSkills: [...disabledSkills],
-            }).catch(() => {})
           },
         },
         prompts: {
@@ -877,12 +793,6 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
           setPrompts(prompts) {
             if (prompts.consolidate) currentConsolidatePrompt = prompts.consolidate
             if (prompts.integrate) currentIntegratePrompt = prompts.integrate
-            persistDevtoolsState(stateStore, {
-              llm: currentLlmConfig,
-              prompts: { consolidate: currentConsolidatePrompt, integrate: currentIntegratePrompt },
-              disabledTools: [...disabledTools],
-              disabledSkills: [...disabledSkills],
-            }).catch(() => {})
           },
         },
         sessionAccess: {
@@ -925,12 +835,6 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
           setEnabled(name, enabled) {
             if (enabled) disabledTools.delete(name)
             else disabledTools.add(name)
-            persistDevtoolsState(stateStore, {
-              llm: currentLlmConfig,
-              prompts: { consolidate: currentConsolidatePrompt, integrate: currentIntegratePrompt },
-              disabledTools: [...disabledTools],
-              disabledSkills: [...disabledSkills],
-            }).catch(() => {})
           },
         },
         skills: {
@@ -944,12 +848,6 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
           setEnabled(name, enabled) {
             if (enabled) disabledSkills.delete(name)
             else disabledSkills.add(name)
-            persistDevtoolsState(stateStore, {
-              llm: currentLlmConfig,
-              prompts: { consolidate: currentConsolidatePrompt, integrate: currentIntegratePrompt },
-              disabledTools: [...disabledTools],
-              disabledSkills: [...disabledSkills],
-            }).catch(() => {})
           },
         },
         integration: {
@@ -968,6 +866,7 @@ export async function createTemplateApp(spec: StelloTemplateSpec): Promise<{
             }
           },
         },
+        stateStore,
       } as Parameters<typeof startDevtools>[1])
     },
   }

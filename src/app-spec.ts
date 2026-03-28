@@ -43,6 +43,7 @@ export interface StelloTemplateSpec {
     model: string
     baseURL: string
     apiKeyEnv: string
+    maxContextTokens: number
     temperature?: number
     maxTokens?: number
   }
@@ -108,6 +109,7 @@ export const appSpec: StelloTemplateSpec = {
     model: process.env.OPENAI_MODEL ?? 'MiniMax-M2.7',
     baseURL: process.env.OPENAI_BASE_URL ?? 'https://api.minimaxi.com/v1',
     apiKeyEnv: 'OPENAI_API_KEY',
+    maxContextTokens: 128000,
     temperature: 0.7,
     maxTokens: 2048,
   },
