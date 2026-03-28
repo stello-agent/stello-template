@@ -1,6 +1,6 @@
 # stello-template
 
-A starter template for building a complete Stello demo app around `@stello-ai/devtools`.
+A starter template for building a complete Stello demo app around the published `@stello-ai/*` packages.
 
 This template is intentionally scenario-neutral. It provides orchestration and DevTools wiring, not a built-in business persona.
 
@@ -12,6 +12,7 @@ This template is intentionally scenario-neutral. It provides orchestration and D
 - runtime LLM switching from DevTools
 - built-in `stello_create_session` and `save_note` tools
 - persisted DevTools settings and session system prompts
+- official `createSessionTool` and `DevtoolsStateStore` integration, without local compatibility shims
 
 ## Quick Start
 
@@ -46,6 +47,12 @@ Edit `src/app-spec.ts`:
 - custom tools
 - custom skills
 
+Important defaults in `llm`:
+
+- `apiKeyEnv`: environment variable used to read the API key
+- `maxContextTokens`: required by the published OpenAI-compatible adapter
+- `temperature` / `maxTokens`: default generation settings
+
 The defaults are placeholders only. Replace them with your own business-specific prompts and tools.
 
 ## Files
@@ -75,3 +82,4 @@ DEVTOOLS_PORT=4800
 - Persistence lives under `./tmp/stello-app` by default.
 - Built-in `stello_create_session` now follows the official `createSessionTool` semantics from `@stello-ai/session`.
 - It accepts `label`, optional `systemPrompt`, and optional `prompt`. The `prompt` is written as the child session's first assistant kickoff message.
+- Tool-call history is mirrored to the file-backed memory store so restarted sessions can continue multi-turn tool use correctly.
